@@ -1,0 +1,1 @@
+# Manual-building-a-k8s-cluster-via-kubeadm
