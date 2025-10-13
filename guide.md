@@ -35,7 +35,9 @@ We can choose any lightweight **Linux distribution** (for example, Ubuntu Server
 
 
 
-#NOTE: The following outlines the process for securing servers. If you have already completed this step, you can skip it and proceed to **The main steps for building the Kubernetes environment**
+#NOTE: The following outlines the process for securing servers. If you have already completed this step, you can skip it and proceed to **The main steps for building the Kubernetes environment**.
+
+
 
 
 ### SSH & Networking Configuration
