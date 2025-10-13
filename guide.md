@@ -33,12 +33,9 @@ We can choose any lightweight **Linux distribution** (for example, Ubuntu Server
 | **Disk Space** | ≥ 20 GB |
 | **Network** | Full connectivity between nodes (bridged) |
 
-
-
+<br>
 #NOTE: The following outlines the process for securing servers. If you have already completed this step, you can skip it and proceed to **The main steps for building the Kubernetes environment**.
-
-
-
+<br>
 
 ### SSH & Networking Configuration
 
