@@ -135,11 +135,11 @@ Check its status:
 sudo ufw status verbose
 ```
 
-# The main step
+# The main step for building K8s environment
 
 ### Step 1: Create a Dedicated User
 
-We should never use the `root` user for regular Kubernetes management. So instead, using a `non-root` user for improving operational security. This is a best Practice to avoid using root for administrative Kubernetes tasks.
+We should never use the `root` user for regular K8s management. So instead, using a `non-root` user for improving operational security. This is a best Practice to avoid using root for administrative K8s tasks.
 
 ```bash
  adduser petops
@@ -149,7 +149,7 @@ We should never use the `root` user for regular Kubernetes management. So instea
 
 ### Step 2: Disable Swap
 
-Kubernetes requires **swap to be disabled**. If swap is on, the kubelet service will refuse to start.
+K8s requires **swap to be disabled**. If swap is on, the kubelet service will refuse to start.
 
 ```bash
 sudo swapoff -a
@@ -183,13 +183,13 @@ EOF
 sudo sysctl --system
 ```
 
--> This step opens up the Linux system to allow Kubernetes networking to work. It lets pods talk to each other, and lets kube-proxy control traffic safely.
+-> This step opens up the Linux system to allow K8s networking to work. It lets pods talk to each other, and lets kube-proxy control traffic safely.
 
 ### Step 4: Install Container Runtime
 
 There are 3 container runtimes: containerd, docker, and cri
 
-Historically, Kubernetes used Docker as its container runtime.
+Historically, K8s used Docker as its container runtime.
 But since Kubernetes v1.24, Docker support was removed and replaced by containerd (and CRI-O). So we use containerd in this case instead of Docker or cri
 
 **Add repo and install packages**
@@ -210,7 +210,7 @@ sudo apt install -y [containerd.io](http://containerd.io/)
 
 **Config containerd**
 
-By default, containerd doesn’t use systemd for cgroup management, but Kubernetes expects it.
+By default, containerd doesn’t use systemd for cgroup management, but K8s expects it.
 
 We’ll fix that by editing the configuration file.
 
@@ -223,9 +223,9 @@ sudo systemctl restart containerd
 sudo systemctl enable containerd
 ```
 
-### Step 5: Install Kubernetes Components
+### Step 5: Install K8s Components
 
-Some users encounter this key error, that is because the Kubernetes repository now uses a new keyring format.
+Some users encounter this key error, that is because the K8s repository now uses a new keyring format.
 
 ```bash
 W: OpenPGP signature verification failed: https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v1.30/deb  InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 234654DA9A296436
@@ -235,7 +235,7 @@ N: See apt-secure(8) manpage for repository creation and user configuration deta
 N: Some sources can be modernized. Run 'apt modernize-sources' to do so.
 ```
 
-Previously, the keyring file type was unsupported. So I have to fix it by correctly adding the Kubernetes signing key using `Release.key` and storing it as a `.gpg` file under `/etc/apt/keyrings`.
+Previously, the keyring file type was unsupported. So I have to fix it by correctly adding the K8s signing key using `Release.key` and storing it as a `.gpg` file under `/etc/apt/keyrings`.
 
 ```bash
 sudo mkdir -p /etc/apt/keyrings
@@ -342,4 +342,4 @@ worker1   Ready    <none>          12m   v1.30.14
 worker2   Ready    <none>          12m   v1.30.14
 ```
 
-🎉 Congratulations! You now have a fully functional Kubernetes cluster built manually from scratch.
+🎉 Congratulations! You now have a fully functional K8s cluster built manually from scratch.
