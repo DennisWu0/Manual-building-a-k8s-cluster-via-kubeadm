@@ -445,7 +445,7 @@ Now comes the exciting part — visiting your vm’s ip at `http://<vms ip>:3008
 
 And there it is, a **custom “Hello from Kubernetes!” page** served right from my cluster 🤩
 
-![image.png](attachment:5d4c90cd-57a9-4821-b310-d71bb39ce638:image.png)
+<img width="1922" height="1039" alt="image (23)" src="https://github.com/user-attachments/assets/10fbd0df-03e9-49fa-a818-1ec921996966" />
 
 Let’s try it and give me some feedback if you feel it benefits you. Each small step brings us closer to mastering K8s 💪
 
