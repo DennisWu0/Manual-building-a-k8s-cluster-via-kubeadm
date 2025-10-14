@@ -1,5 +1,3 @@
-# Manual-building-a-k8s-cluster-via-kubeadm
-
 🧩 This guide walks you through a complete, manual Kubernetes cluster setup using **kubeadm** and **containerd**, without relying on managed services or automation tools.
 
 I write this article cause I’ve seen many resources online, but there are no resources that explain Kubernetes in a clear, step-by-step way. That’s why I wrote this guide to help developers, DevOps engineers, and system administrators understand how Kubernetes really works under the hood, from system setup to networking and CNI integration.
@@ -349,3 +347,105 @@ worker2   Ready    <none>          12m   v1.30.14
 ```
 
 🎉 Congratulations! You now have a fully functional K8s cluster built manually from scratch.
+<br>
+<br>
+# Testing with the new K8s environment
+
+After setting up your own K8s cluster, we absolutely want to take it for a real spin. So the best way to do it is to deploy a simple web app that serves a custom HTML page within the internal network.
+
+The goal is simple: learn by doing, and see something actually run inside the cluster!
+
+### 🧩 Step 1: Preparing the Deployment
+
+Every K8s deployment starts with two key components: a **Deployment** and a **Service.**
+
+In this case, we also added a **ConfigMap** to customize the HTML page displayed by Nginx. Here’s what the configuration looks like 👇
+
+```bash
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-html
+data:
+  index.html: |
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>K8s Demo</title>
+      </head>
+      <body>
+        <h1>Hello from Kubernetes!</h1>
+        <p>Hi I'm Dennis hope you enjoy the process of learning K8s.</p>
+      </body>
+      </html>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-demo
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: nginx-html
+```
+
+### 🌐 Step 2: Exposing the App
+
+Next, we created a **Service** of type `NodePort` so the app can be accessed from any node in the internal network:
+
+```bash
+petops@master:~/projects/simple_web$ cat svc.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx-demo
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+```
+
+### ⚙️ Step 3: Deploying Everything
+
+With both files ready, the deployment is as simple as running:
+
+```bash
+petops@master:~/projects/simple_web$ kubectl apply -f config.yaml
+configmap/nginx-html configured
+deployment.apps/nginx-deployment created
+petops@master:~/projects/simple_web$ kubectl apply -f svc.yaml
+service/nginx-service created
+```
+
+### 🎉 Step 4: The Result!
+
+Now comes the exciting part — visiting your vm’s ip at `http://<vms ip>:30080`! In this case is 192.168.0.201:30080. You can access from any browser like Chrome.
+
+And there it is, a **custom “Hello from Kubernetes!” page** served right from my cluster 🤩
+
+![image.png](attachment:5d4c90cd-57a9-4821-b310-d71bb39ce638:image.png)
+
+Let’s try it and give me some feedback if you feel it benefits you. Each small step brings us closer to mastering K8s 💪
+
