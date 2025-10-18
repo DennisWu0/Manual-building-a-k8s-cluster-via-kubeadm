@@ -341,7 +341,7 @@ Which CNI you choose really depends on personal goal. For a straightforward and 
 Here’s how to install Flannel:
 
 ```bash
-kubectl apply -f [https://github.com/flannel-io/flannel/releases/v0.27.4/download/kube-flannel.yml](https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml)
+kubectl apply -f https://github.com/flannel-io/flannel/releases/v0.27.4/download/kube-flannel.yml
 
 ```
 
@@ -363,8 +363,7 @@ Alright, enough storytelling, let’s move on to installing and configuring Cali
 **Install Calico**
 
 ```bash
-kubectl apply -f [https://raw.githubusercontent.com/projectcalico/calico/v3.30.4/manifests/calico.yaml](https://raw.githubusercontent.com/projectcalico/calico/v3.30.3/manifests/calico.yaml)
-```
+kubectl apply -f[https://raw.githubusercontent.com/projectcalico/calico/v3.30.4/manifests/calico.yaml
 
 Wait a few minutes, then check again:
 
