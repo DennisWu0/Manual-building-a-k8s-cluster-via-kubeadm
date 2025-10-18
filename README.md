@@ -153,7 +153,7 @@ We should never use the `root` user for regular K8s management. So instead, usin
 
 ### Step 2: Disable Swap
 
-K8s requires **swap to be disabled**. If swap is on, the kubelet service will refuse to start.
+Before we dive in, let’s briefly talk about why Kubernetes requires swap to be disabled. If swap is enabled, the kubelet service will refuse to start. The reason is straightforward: when a system runs out of memory, it normally uses disk space as virtual memory (swap). However, in Kubernetes, accurate memory statistics are essential for scheduling and resource management. Allowing swap would make these metrics unreliable, leading to unstable performance across the cluster.
 
 ```bash
 sudo swapoff -a
@@ -192,9 +192,9 @@ sudo sysctl --system
 ### Step 4: Install Container Runtime
 
 There are 3 container runtimes: containerd, docker, and cri
-
-Historically, K8s used Docker as its container runtime.
-But since Kubernetes v1.24, Docker support was removed and replaced by containerd (and CRI-O). So we use containerd in this case instead of Docker or cri
+<br>
+Historically, Kubernetes used Docker as its container runtime.
+But since Kubernetes v1.24, Docker support was removed and replaced by containerd (and CRI-O). Containerd is **lightweight**, **fast**, and directly **compatible** with Kubernetes through the Container Runtime Interface (CRI). So we use containerd in this case instead of Docker.
 
 **Add repo and install packages**
 
@@ -229,7 +229,7 @@ sudo systemctl enable containerd
 
 ### Step 5: Install K8s Components
 
-Some users encounter this key error, that is because the K8s repository now uses a new keyring format.
+OMG in this step, I actually met the issue shown below! Some users have also reported this key error, which happens because the K8s repository now uses a new keyring format.
 
 ```bash
 W: OpenPGP signature verification failed: https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v1.30/deb  InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 234654DA9A296436
@@ -329,11 +329,41 @@ Conditions:
   PIDPressure      False   Sun, 12 Oct 2025 17:40:10 +0000   Sun, 12 Oct 2025 17:39:39 +0000   KubeletHasSufficientPID      kubelet has sufficient PID available
   Ready            False   Sun, 12 Oct 2025 17:40:10 +0000   Sun, 12 Oct 2025 17:39:39 +0000   KubeletNotReady              container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
 ```
+**Installing CNI for k8s cluster**
 
-**Installing CNI-Calico for k8s cluster**
+If you’re at this step, slow down a bit, **this one’s important.**
+
+I’ve worked with two CNIs: Calico and Flannel.
+Flannel is quite familiar because it’s used by K3s, making it great for lightweight testing or learning environments. However, at the enterprise level, where security, performance, and scalability matter, most teams use Calico.
+
+Which CNI you choose really depends on personal goal. For a straightforward and user-friendly setup, it is advisable to select Flannel. Conversely, if you seek a more challenging experience or are preparing for a production environment, let's try Calico.
+
+Here’s how to install Flannel:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.30.3/manifests/calico.yaml
+kubectl apply -f [https://github.com/flannel-io/flannel/releases/v0.27.4/download/kube-flannel.yml](https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml)
+
+```
+
+I’ll briefly explain how I met this problem and how I debugged this network issue, it’s worth understanding.
+When deploying a project, the ultimate goal is simple: other users should be able to access your app. To achieve that, I used **Ingress** integrated with **MetalLB** as the load balancer.
+Ingress was working fine, but when I first installed MetalLB using this manifest:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.2/config/manifests/metallb-native.yaml
+
+```
+
+The MetalLB container kept crashing and couldn’t start properly.
+
+I spent hours troubleshooting before finally finding the root cause, and the official documentation turned out to be the key https://metallb.universe.tf/configuration/calico/ (That experience reminded me why we shouldn’t rely entirely on AI for debugging 😅.)
+
+Alright, enough storytelling, let’s move on to installing and configuring Calico.
+
+**Install Calico**
+
+```bash
+kubectl apply -f [https://raw.githubusercontent.com/projectcalico/calico/v3.30.4/manifests/calico.yaml](https://raw.githubusercontent.com/projectcalico/calico/v3.30.3/manifests/calico.yaml)
 ```
 
 Wait a few minutes, then check again:
@@ -346,7 +376,49 @@ worker1   Ready    <none>          12m   v1.30.14
 worker2   Ready    <none>          12m   v1.30.14
 ```
 
-🎉 Congratulations! You now have a fully functional K8s cluster built manually from scratch.
+**Config Calico**
+
+Now, let’s adjust Calico’s network settings by disabling VXLAN mode:
+
+```bash
+kubectl edit ippool default-pool
+```
+
+Then change the spec section to this:
+
+```bash
+spec:
+  vxlanMode: Never
+  ipipMode: Never
+```
+
+Also, make sure:
+
+```bash
+  natOutgoing: true
+  nodeSelector: all()
+```
+
+Before restarting, check the label of your Calico pods, it’s usually something like `k8s-app=calico-node` , in my case `k8s-app=calico-kube-controllers`
+
+**Restart Calico nodes**
+
+```bash
+kubectl delete pod -n kube-system -l k8s-app=calico-node
+```
+
+**Install MetalLB manifests**
+
+Now install the MetalLB manifests again:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.2/config/manifests/metallb-native.yaml
+kubectl get pods -n metallb-system
+```
+
+Wait a few seconds. If all pods are running, it is working correctly!
+
+🎉 Congratulations! You now have a fully functional Kubernetes cluster built manually from scratch.
 <br>
 <br>
 # Testing with the new K8s environment
